@@ -6,10 +6,10 @@ services:
     container_name: transaction-ledger-api
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:${PORT:-3000}"
     environment:
-      - PORT=3000
-      - NODE_ENV=production
+      - PORT=${PORT:-3000}
+      - NODE_ENV=${NODE_ENV:-production}
       - DB_FILE=/app/data/ledger.sqlite
     volumes:
       # Mount local ./data directory to persist SQLite ledger database
