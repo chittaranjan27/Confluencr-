@@ -66,6 +66,26 @@ Server starts at **`http://localhost:3000`**:
 - **Swagger / OpenAPI Documentation**: `http://localhost:3000/docs`
 - **Health Check**: `http://localhost:3000/health`
 
+### Run with Docker (Recommended for Production)
+
+#### Option A: Using Docker Compose
+```bash
+docker compose up --build -d
+```
+To stop:
+```bash
+docker compose down
+```
+
+#### Option B: Using Docker CLI Directly
+```bash
+# Build Docker image
+docker build -t transaction-ledger-api .
+
+# Run container with volume mount for data persistence
+docker run -d -p 3000:3000 -v $(pwd)/data:/app/data --name ledger-api transaction-ledger-api
+```
+
 ### Run Automated Tests
 ```bash
 npm test
