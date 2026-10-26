@@ -28,6 +28,11 @@ export function createApp(service?: LedgerService): Application {
     });
   });
 
+  // Handle favicon.ico cleanly
+  app.get("/favicon.ico", (_req: Request, res: Response) => {
+    res.status(204).end();
+  });
+
   // Mount API Router
   const controller = new LedgerController(service);
   const router = createLedgerRouter(controller);
