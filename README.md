@@ -338,3 +338,31 @@ When the server is running, navigate to:
   - Filter and paginate the live transaction ledger.
   - Run the real-time Ledger Balance Audit.
 - **`http://localhost:3000/docs`**: Interactive Swagger UI to inspect and test all API routes directly.
+
+---
+
+## 📌 Assumptions
+
+1. **Currency Precision & Storage**:
+   - All amounts are assumed to be in standard currency units with at most 2 decimal places (cents).
+   - To guarantee zero floating-point drift, all calculations and database storage use **64-bit integer cents** (`balance_cents = Math.round(balance * 100)`). Amounts are formatted back to 2-decimal numbers in API responses.
+   - Amounts must be strictly positive (`amount > 0`). Negative and zero amounts are rejected.
+
+2. **Account Initialization**:
+   - All accounts start with balance `0.00`.
+   - If a client supplies a `balance` field during account creation, the API rejects it with `400 Bad Request` rather than silently ignoring it, explicitly enforcing that clients cannot set balances.
+
+3. **Reference ID Scoping**:
+   - `reference_id` uniqueness is enforced per account: `UNIQUE (account_id, reference_id)`.
+   - Submitting a duplicate `reference_id` for the same account returns `409 Conflict` (`DUPLICATE_TRANSACTION`), leaving account balance unaltered.
+   - Different accounts are permitted to reuse the same `reference_id` (e.g., common external payroll or bank reference numbers).
+
+4. **Transaction Immutability**:
+   - The ledger is strictly write-only / append-only.
+   - Attempting `PUT`, `PATCH`, or `DELETE` on transactions returns `405 Method Not Allowed` at the API router.
+   - SQLite triggers (`BEFORE UPDATE` and `BEFORE DELETE`) prevent raw SQL mutations directly in the database engine.
+
+5. **Concurrency & Atomicity**:
+   - SQLite transactions run with `BEGIN IMMEDIATE` row-level write locks.
+   - Concurrency stress tests verify that simultaneous debit requests exceeding available funds are safely rejected without negative balances or race conditions.
+
