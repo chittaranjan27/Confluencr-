@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction Ledger | Full-Stack Dashboard & API Playground</title>
+  <meta name="description" content="Production-ready financial transaction ledger with ACID compliance, duplicate transaction prevention, and verifiable ledger auditability.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/>
+            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
+            <path d="M12 6V4m0 16v-2"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">LedgerEngine <span class="badge badge-accent">ACID v1.0</span></h1>
+          <p class="brand-subtitle">Financial Transaction Ledger & Real-Time Audit System</p>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <span class="status-indicator">
+          <span class="status-dot"></span> SQLite WAL Mode Active
+        </span>
+        <a href="/docs" target="_blank" class="btn btn-outline" id="docs-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          Swagger API Docs
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="main-container">
+      <!-- Notification Banner / Toast -->
+      <div id="toast-container" class="toast-container"></div>
+
+      <!-- Left Column: Account Selector, Creation & Simulator -->
+      <section class="left-col">
+        <!-- Account Switcher & Balance Card -->
+        <div class="card account-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="card-tag">Account Overview</span>
+              <h2 class="card-title">Active Account</h2>
+            </div>
+            <button id="refresh-btn" class="btn btn-ghost btn-sm" title="Refresh Account Data">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+            </button>
+          </div>
+
+          <div class="account-select-wrapper">
+            <label for="account-selector" class="field-label">Select Account</label>
+            <select id="account-selector" class="select-field">
+              <option value="">Loading accounts...</option>
+            </select>
+          </div>
+
+          <div class="balance-display">
+            <span class="balance-label">Current Verified Balance</span>
+            <div class="balance-value" id="balance-amount">$0.00</div>
+            <div class="account-meta">
+              <div class="meta-row">
+                <span class="meta-label">Holder:</span>
+                <span class="meta-value" id="holder-name">—</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Account ID:</span>
+                <span class="meta-value mono" id="account-id-val">—</span>
+                <button class="copy-btn" id="copy-id-btn" title="Copy Account ID">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="audit-action-box">
+            <button id="run-audit-btn" class="btn btn-secondary w-full">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+              Verify Ledger Balance Audit
+            </button>
+            <div id="audit-result-box" class="audit-result-box hidden"></div>
+          </div>
+        </div>
+
+        <!-- Create Account Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="card-tag">Requirement 1</span>
+              <h2 class="card-title">Create Account</h2>
+            </div>
+          </div>
+          <p class="card-description">
+            Generates a unique account. Initial balance is strictly locked to <strong>$0.00</strong>.
+          </p>
+          <form id="create-account-form" class="form-grid">
+            <div class="form-group">
+              <label for="new-account-name" class="field-label">Account Holder Name *</label>
+              <input type="text" id="new-account-name" class="input-field" placeholder="e.g. Alice Wonderland" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-full" id="btn-create-acc">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              Create Account (Balance $0.00)
+            </button>
+          </form>
+        </div>
+
+        <!-- Add Transaction Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="card-tag">Requirement 2</span>
+              <h2 class="card-title">Add Transaction</h2>
+            </div>
+          </div>
+          <p class="card-description">
+            Atomic credit or debit. Duplicate reference IDs and overdraft debits are rejected.
+          </p>
+
+          <!-- Quick Test Presets -->
+          <div class="quick-presets">
+            <span class="presets-title">Quick Test Scenarios:</span>
+            <div class="preset-buttons">
+              <button type="button" class="preset-pill" id="preset-credit-100">+ Credit $100</button>
+              <button type="button" class="preset-pill" id="preset-debit-30">- Debit $30</button>
+              <button type="button" class="preset-pill preset-warn" id="preset-overdraft">Trigger Overdraft Rejection</button>
+              <button type="button" class="preset-pill preset-alert" id="preset-duplicate">Trigger Duplicate Ref Rejection</button>
+            </div>
+          </div>
+
+          <form id="add-transaction-form" class="form-grid">
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="field-label">Transaction Type *</label>
+                <div class="segmented-control">
+                  <label class="segment-label segment-credit">
+                    <input type="radio" name="tx-type" value="credit" checked>
+                    <span>Credit (+)</span>
+                  </label>
+                  <label class="segment-label segment-debit">
+                    <input type="radio" name="tx-type" value="debit">
+                    <span>Debit (-)</span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="tx-amount" class="field-label">Amount ($ USD) *</label>
+                <input type="number" id="tx-amount" class="input-field" step="0.01" min="0.01" placeholder="50.00" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="label-with-action">
+                <label for="tx-reference" class="field-label">Reference ID (Unique per account) *</label>
+                <button type="button" id="gen-ref-btn" class="text-link">Generate New</button>
+              </div>
+              <input type="text" id="tx-reference" class="input-field mono" placeholder="REF-2026-001" required>
+            </div>
+
+            <div class="form-group">
+              <label for="tx-description" class="field-label">Description *</label>
+              <input type="text" id="tx-description" class="input-field" placeholder="e.g. Salary deposit, Coffee, SaaS bill" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full" id="btn-submit-tx">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Execute Transaction
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Right Column: Transaction History & Ledger Audit Table -->
+      <section class="right-col">
+        <div class="card ledger-table-card">
+          <div class="table-card-header">
+            <div>
+              <div class="card-title-group">
+                <span class="card-tag">Requirement 4</span>
+                <h2 class="card-title">Transaction History</h2>
+              </div>
+              <p class="card-description">
+                Immutable ledger log. Sorted latest-first (<code class="mono">created_at DESC</code>).
+              </p>
+            </div>
+
+            <!-- Filters -->
+            <div class="table-filters">
+              <div class="filter-group">
+                <label for="filter-type" class="filter-label">Filter Type:</label>
+                <select id="filter-type" class="select-field select-sm">
+                  <option value="">All Transactions</option>
+                  <option value="credit">Credits Only</option>
+                  <option value="debit">Debits Only</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label for="page-limit" class="filter-label">Per Page:</label>
+                <select id="page-limit" class="select-field select-sm">
+                  <option value="5">5</option>
+                  <option value="10" selected>10</option>
+                  <option value="20">20</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transactions Table -->
+          <div class="table-wrapper">
+            <table class="data-table" id="transactions-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Type</th>
+                  <th>Reference ID</th>
+                  <th>Description</th>
+                  <th class="text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="transactions-body">
+                <tr>
+                  <td colspan="5" class="table-empty">Select or create an account to view transactions.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar">
+            <div class="pagination-info" id="pagination-info">
+              Showing 0 of 0 transactions
+            </div>
+            <div class="pagination-controls">
+              <button id="btn-prev-page" class="btn btn-outline btn-sm" disabled>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+                Previous
+              </button>
+              <span class="page-indicator" id="page-indicator">Page 1 of 1</span>
+              <button id="btn-next-page" class="btn btn-outline btn-sm" disabled>
+                Next
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Requirement Checklist / Integrity Card -->
+        <div class="card integrity-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="card-tag">Requirement 5</span>
+              <h2 class="card-title">Ledger Integrity Guarantees</h2>
+            </div>
+          </div>
+          <div class="guarantees-grid">
+            <div class="guarantee-item">
+              <div class="guarantee-icon success">✓</div>
+              <div>
+                <strong>Initial Balance Enforcement</strong>
+                <p>Initial balance is always $0.00. Client-supplied balances are rejected.</p>
+              </div>
+            </div>
+            <div class="guarantee-item">
+              <div class="guarantee-icon success">✓</div>
+              <div>
+                <strong>Overdraft Protection</strong>
+                <p>Debit transactions exceeding current balance are rejected before balance alteration.</p>
+              </div>
+            </div>
+            <div class="guarantee-item">
+              <div class="guarantee-icon success">✓</div>
+              <div>
+                <strong>Idempotent Reference ID Check</strong>
+                <p>Duplicate reference IDs within the same account return 409 Conflict. Cross-account allowed.</p>
+              </div>
+            </div>
+            <div class="guarantee-item">
+              <div class="guarantee-icon success">✓</div>
+              <div>
+                <strong>Immutability & Zero Drift</strong>
+                <p>No PUT/DELETE endpoints. SQLite triggers prevent modifications. Math verified in cents.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
